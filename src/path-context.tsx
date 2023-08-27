@@ -1,29 +1,36 @@
-import { Dispatch, createContext, useContext, useReducer } from 'react';
+import { Dispatch, createContext, useContext, useEffect, useReducer } from 'react';
+import { useLocale } from './locale-context';
+import { loadLocalizedStepsAsync } from './content-service';
 
 export type StepType =  "start" | "read" | "practice";
 
-export interface Step {
-    id: number,
-    name: string,
+export interface Exercice {
+    id: string,
+    title: string,
     description: string,
-    isInProgress: boolean,
+    pictureUrl?: string,
+}
+export interface Step {
+    id: string,
+    title: string,
+    description: string,
     type: StepType,
+    exercises?: Exercice[]
 }
 
 interface PathState {
-    steps: Step[],
+    steps: Step[]
     selectedStep: Step | null
 }
 
-export type PathStateDispatchAction = "select" | "deselect";
+export type PathStateDispatchAction = "select" | "deselect" | "load";
 
 export interface PathStateDispatch {
     type: PathStateDispatchAction,
-    data?: Step
+    data?: Step | Step[]
 }
 
 interface PropsType {
-    steps: Step[],
     children: JSX.Element
 }
 
@@ -32,20 +39,31 @@ const PathDispatchContext = createContext<Dispatch<PathStateDispatch> | null>(nu
 
 
 export function PathStateProvider(props: PropsType) {
-    const initialState = {
-        steps: props.steps,
-        selectedStep: null
-    };
+    const locale = useLocale();
     const [pathState, pathDispatch] = useReducer(
         pathReducer,
-        initialState
+        {
+            steps: [],
+            selectedStep: null
+        }
     );
 
+    useEffect(() => {
+        (async function fetchData(){
+            const s = await loadLocalizedStepsAsync(locale);
+            pathDispatch({
+                type: "load",
+                data: s
+            });
+        })();
+    }, [locale])
+
+    console.log("PathStateProvider pathState", pathState);
     return (
         <PathContext.Provider value={pathState}>
             <PathDispatchContext.Provider value={pathDispatch}>
             <div data-testid="path-state-provider">
-            {props.children}
+                {props.children}
             </div>
             </PathDispatchContext.Provider>
         </PathContext.Provider>
@@ -61,18 +79,26 @@ export function usePathDispatch() {
 }
 
 function pathReducer(oldState: PathState, action: PathStateDispatch) : PathState {
-    const selectedStep = action.data as Step;
     switch (action.type) {
-        case "select":
+        case "select": {
+            const selectedStep = action.data as Step;
             return  selectedStep?  {
                 ...oldState,
                 selectedStep: selectedStep
             } : oldState;
+        }
         case "deselect":
             return  {
                 ...oldState,
                 selectedStep: null
             };
+        case "load": {
+            const steps = action.data as Step[];
+            return {
+                steps: steps,
+                selectedStep: oldState.selectedStep? steps.find((v) => v.id === oldState.selectedStep?.id) ?? null : null
+            }
+        }
         default: {
             throw Error('Unknown action: ' + action.type);
         }
