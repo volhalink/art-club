@@ -1,6 +1,6 @@
 import Langage from './Language';
-import { useLocale } from './locale-context';
-import { translate } from './translation-service';
+import { useLocale } from './contexts/locale-context';
+import { translate } from './services/l10n';
 
 function Header() {
     const locale = useLocale();

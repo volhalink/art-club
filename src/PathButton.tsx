@@ -1,5 +1,5 @@
-import { Step, usePathDispatch } from "./path-context";
-
+import { usePathDispatch } from "./contexts/learning-path-context";
+import {Step} from './contexts/models';
 interface PathButtonProps {
     step: Step
 }
@@ -21,7 +21,7 @@ function PathButton(props: PathButtonProps) {
     }
     const onClick = () => {
         desp && desp({
-            type: "select",
+            type: "select-step",
             data: step
         })
     }

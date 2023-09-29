@@ -1,5 +1,5 @@
 import Exercice from "./Exercise";
-import { usePath } from "./path-context";
+import { usePath } from "./contexts/learning-path-context";
 
 function PathStep() {
   const state = usePath();

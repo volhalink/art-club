@@ -1,4 +1,4 @@
-import { Exercice } from "./path-context";
+import { Exercice } from "./contexts/models";
 
 interface ExerciceProps {
     exercise: Exercice

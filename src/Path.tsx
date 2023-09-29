@@ -1,16 +1,16 @@
 import PathButton from "./PathButton";
 import PathStep from "./PathStep";
-import { usePath, usePathDispatch } from "./path-context";
+import { usePath, usePathDispatch } from "./contexts/learning-path-context";
 
 function Path() {
    const pathState = usePath();
-   console.log("Path", pathState?.steps);
    const desp = usePathDispatch();
    const deselect = () => {
     desp && desp({
-      type: "deselect"
+      type: "deselect-step"
     });
    }
+    
     return (
         <div>
           <div className="md:hidden mt-3">
@@ -30,7 +30,7 @@ function Path() {
                 </div>
               : <div className="ml-2 flex justify-center">
                   <div>
-                    {pathState?.steps.map(s => <div key={s.id} className="even:ml-5 sm:even:ml-10"><PathButton step={s} /></div>)}
+                    {pathState?.selectedLearningPath?.steps?.map(s => <div key={s.id} className="even:ml-5 sm:even:ml-10"><PathButton step={s} /></div>)}
                   </div>
                 </div>
             }
@@ -38,7 +38,7 @@ function Path() {
         <div className="hidden md:grid md:grid-cols-3 justify-start md:ml-3 md:mt-3">
             <div className="col-span-1">
               {
-              pathState?.steps.map(s => <div key={s.id} className="even:ml-10"><PathButton step={s} /></div>) 
+              pathState?.selectedLearningPath?.steps?.map(s => <div key={s.id} className="even:ml-10"><PathButton step={s} /></div>) 
               }
             </div>
             <div className="m-5  col-span-2">

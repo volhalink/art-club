@@ -1,6 +1,5 @@
 import { Dispatch, createContext, useContext, useReducer } from 'react';
-
-export type Locale = "be" | "ru";
+import { Locale } from '../services/l10n';
 
 export interface LocaleDispatch {
     locale: Locale

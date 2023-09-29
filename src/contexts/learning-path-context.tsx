@@ -1,33 +1,18 @@
 import { Dispatch, createContext, useContext, useEffect, useReducer } from 'react';
-import { useLocale } from './locale-context';
-import { loadLocalizedStepsAsync } from './content-service';
-
-export type StepType =  "start" | "read" | "practice";
-
-export interface Exercice {
-    id: string,
-    title: string,
-    description: string,
-    pictureUrl?: string,
-}
-export interface Step {
-    id: string,
-    title: string,
-    description: string,
-    type: StepType,
-    exercises?: Exercice[]
-}
+import { loadLocalizedLearningPathAsync } from '../services/content-service';
+import { LearningPath, Step } from './models';
+import { useLearningDispatch } from './learning-context';
 
 interface PathState {
-    steps: Step[]
+    selectedLearningPath: LearningPath | null,
     selectedStep: Step | null
 }
 
-export type PathStateDispatchAction = "select" | "deselect" | "load";
+export type PathStateDispatchAction =  "select-path" |  "deselect-path" | "select-step" | "deselect-step";
 
 export interface PathStateDispatch {
     type: PathStateDispatchAction,
-    data?: Step | Step[]
+    data?: Step | LearningPath
 }
 
 interface PropsType {
@@ -39,26 +24,34 @@ const PathDispatchContext = createContext<Dispatch<PathStateDispatch> | null>(nu
 
 
 export function PathStateProvider(props: PropsType) {
-    const locale = useLocale();
+    const learningDispatch = useLearningDispatch();
     const [pathState, pathDispatch] = useReducer(
         pathReducer,
         {
-            steps: [],
+            selectedLearningPath: null,
             selectedStep: null
         }
     );
 
     useEffect(() => {
         (async function fetchData(){
-            const s = await loadLocalizedStepsAsync(locale);
-            pathDispatch({
-                type: "load",
-                data: s
-            });
+            if(pathState.selectedLearningPath && !pathState.selectedLearningPath?.steps)
+            {
+                const lp = await loadLocalizedLearningPathAsync(pathState.selectedLearningPath.language, pathState.selectedLearningPath.id);
+                if(lp && learningDispatch){
+                    learningDispatch({
+                        type: "load-detailed",
+                        data: lp
+                    })
+                    pathDispatch({
+                        type: "select-path",
+                        data: lp
+                    })
+                }
+            }
         })();
-    }, [locale])
+    }, [pathState.selectedLearningPath])
 
-    console.log("PathStateProvider pathState", pathState);
     return (
         <PathContext.Provider value={pathState}>
             <PathDispatchContext.Provider value={pathDispatch}>
@@ -80,23 +73,31 @@ export function usePathDispatch() {
 
 function pathReducer(oldState: PathState, action: PathStateDispatch) : PathState {
     switch (action.type) {
-        case "select": {
+        case "select-step": {
             const selectedStep = action.data as Step;
             return  selectedStep?  {
                 ...oldState,
                 selectedStep: selectedStep
             } : oldState;
         }
-        case "deselect":
+        case "deselect-step":
             return  {
                 ...oldState,
                 selectedStep: null
             };
-        case "load": {
-            const steps = action.data as Step[];
+        case "select-path": {
+            const path = action.data as LearningPath;
             return {
-                steps: steps,
-                selectedStep: oldState.selectedStep? steps.find((v) => v.id === oldState.selectedStep?.id) ?? null : null
+                ...oldState,
+                selectedLearningPath: path,
+                selectedStep: oldState.selectedStep && path ? path.steps?.find(s => s.id === oldState.selectedStep?.id) ?? null : null
+            }
+        }
+        case "deselect-path": {
+            return {
+                ...oldState,
+                selectedLearningPath: null,
+                selectedStep: null
             }
         }
         default: {

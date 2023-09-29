@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Locale, useLocale, useLocaleDispatch } from "./locale-context";
+import { Locale, useLocale, useLocaleDispatch } from "./contexts/locale-context";
 
 function Language() {
     const locale = useLocale();
